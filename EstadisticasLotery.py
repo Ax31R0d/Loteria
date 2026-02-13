@@ -7,7 +7,52 @@ from sklearn import linear_model, ensemble, svm, model_selection, metrics
 from sklearn.linear_model import ElasticNetCV
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from collections import Counter, defaultdict, deque
+from typing import Iterable
 
+
+
+def print_recencias(serie: List[int], k: int = 4, order: str = "newest") -> None:
+    
+    n = len(serie)
+    for d in range(10):
+        # posiciones donde aparece d
+        pos = [i for i, v in enumerate(serie) if v == d]
+        if len(pos) < 2:
+            gaps = []
+        else:
+            # gaps cronológicos: pos[i] - pos[i-1]
+            gaps = [pos[i] - pos[i-1] for i in range(1, len(pos))]
+        # tomar últimas k gaps
+        last_k = gaps[-k:]
+        if order == "newest":
+            last_k = list(reversed(last_k))
+        print(f"{d}: {last_k}")
+
+
+
+
+def aplicar_regresion_logistica_mayor_menor(columna):
+    if len(columna) < 70:
+        print("Error: Insuficientes datos para regresión logística (mayor/menor).")
+        return None
+    X = np.array(columna[:-1]).reshape(-1, 1)
+    y = np.array([1 if num > 4 else 0 for num in columna[1:]])
+    X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, random_state=42)
+    modelo = linear_model.LogisticRegression().fit(X_train, y_train)
+    ultimo_numero = np.array(columna.iloc[-1]).reshape(1, 1)
+    return modelo.predict_proba(ultimo_numero)[0][1]
+
+
+def aplicar_regresion_logistica_par_impar(columna):
+    if len(columna) < 70:
+        print("Error: Insuficientes datos para regresión logística (par/impar).")
+        return None
+    X = np.array(columna[:-1]).reshape(-1, 1)
+    y = np.array([1 if num % 2 == 0 else 0 for num in columna[1:]])
+    X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2, random_state=42)
+    modelo = linear_model.LogisticRegression().fit(X_train, y_train)
+    ultimo_numero = np.array(columna.iloc[-1]).reshape(1, 1)
+    return modelo.predict_proba(ultimo_numero)[0][1]
 
 
 def aplicar_svr(lista_30, lista_15, lista_6, lista_4, lista_sig):
@@ -509,3 +554,61 @@ def probabilidades_bayes(siguiente, x, y):
     total = len(siguiente)
     
     return {num: freq / total if total > 0 else 0 for num, freq in frecuencia.items()}
+
+
+
+def Axl_promedios(dato: List[float], tresv: List[float], tipo) -> Dict[str, object]:
+    datos=dato.tolist()
+    # Promedio últimos 30 (si hay menos de 30, toma todos)
+    slice_30 = datos[-30:] 
+    prom_30 = sum(slice_30) / len(slice_30) 
+
+    # Promedio últimos 14 (si hay menos de 14, toma todos)
+    slice_14 = datos[-19:]
+    Sum14=sum(slice_14)
+    slice_10 = datos[-9:] 
+    Sum10=sum(slice_10)
+    slice_6 = datos[-4:] 
+    Sum4=sum(slice_6)
+    
+    if tipo == 0:
+        prom0 = (Sum14 + tresv[0]) / 20 
+        prom1 = (Sum14 + tresv[1]) / 20
+        prom2 = (Sum14 + tresv[2]) / 20
+        prom3 = (Sum14 + tresv[3]) / 20
+        prom00 = (Sum10 + tresv[0]) / 10 
+        prom10 = (Sum10 + tresv[1]) / 10
+        prom20 = (Sum10 + tresv[2]) / 10
+        prom30 = (Sum10 + tresv[3]) / 10
+        prom04 = (Sum4 + tresv[0]) / 5 
+        prom14 = (Sum4 + tresv[1]) / 5
+        prom24 = (Sum4 + tresv[2]) / 5
+        prom34 = (Sum4 + tresv[3]) / 5
+    else :
+        prom0 = (Sum14 - tresv[0]) / 20 
+        prom1 = (Sum14 - tresv[1]) / 20
+        prom2 = (Sum14 - tresv[2]) / 20
+        prom3 = (Sum14 - tresv[3]) / 20
+        prom00 = (Sum10 - tresv[0]) / 10 
+        prom10 = (Sum10 - tresv[1]) / 10
+        prom20 = (Sum10 - tresv[2]) / 10
+        prom30 = (Sum10 - tresv[3]) / 10
+        prom04 = (Sum4 - tresv[0]) / 5 
+        prom14 = (Sum4 - tresv[1]) / 5
+        prom24 = (Sum4 - tresv[2]) / 5
+        prom34 = (Sum4 - tresv[3]) / 5
+
+    print(
+        f"\033[32m"
+        f"{{{prom_30:.3f}}}   "
+        f"\033[35m"
+        f"{{{prom0:.3f} ° {prom1:.3f} ° {prom2:.3f} ° {prom3:.3f}}}   "
+        f"\033[34m"
+        f"{{{prom00:.3f} ° {prom10:.3f} ° {prom20:.3f} ° {prom30:.3f}}}   "
+        f"\033[33m"
+        f"{{{prom04:.3f} ° {prom14:.3f} ° {prom24:.3f} ° {prom34:.3f}}}"
+        f"\033[0m"
+)
+
+
+    
